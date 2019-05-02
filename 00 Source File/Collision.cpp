@@ -1,0 +1,111 @@
+/**
+* @file Collision.cpp
+* @brief “–‚½‚è”»’èƒNƒ‰ƒXŽÀ‘•ƒtƒ@ƒCƒ‹
+* @author Ryunosuke Honda.
+*/
+#include "Collision.h"
+
+#include "SphereCollider.h"
+#include "PlaneCollider.h"
+
+#include "SphereXSphereJudge.h"
+
+Collision::Collision():
+	Singleton<Collision>(),
+	mpDevice(nullptr),
+	mpDeviceContext(nullptr),
+	mpSphXSph(nullptr)
+{
+}
+
+Collision::~Collision()
+{
+}
+
+void Collision::init(ID3D11Device * pDevice, ID3D11DeviceContext * pDeviceContext)
+{
+	mpDevice = pDevice;
+	mpDeviceContext = pDeviceContext;
+
+	mpSphXSph = new SphereXSphereJudge(pDevice, pDeviceContext);
+}
+
+void Collision::collision(SphereCollider * sph1, SphereCollider * sph2)
+{
+	mpSphXSph->judge(mpDevice, mpDeviceContext, sph1, sph2);
+}
+
+void Collision::collision(SphereCollider * sph, PlaneCollider * pln)
+{
+	Vector3 normal = -pln->Up;
+	float L = D3DXVec3Dot(&(sph->Position - pln->Position), &(-normal)) - sph->Radius;
+
+	//‹——£‚ª”¼Œa‚æ‚è‘å‚«‚¯‚ê‚ÎÕ“Ë‚µ‚Ä‚¢‚È‚¢
+	if (L >= 0)
+	{
+		sph->result(pln, false);
+		pln->result(sph, false);
+		return;
+	}
+
+	//‰Ÿ‚µ–ß‚µ
+	sph->Position += L * normal;
+
+	sph->Pt = sph->Position + sph->Radius * normal;
+
+	//„‘ÌÕ“Ë‰^“®‚ÌŒvŽZ
+	//dS‚©‚çÕ“Ë“_‚ÌƒxƒNƒgƒ‹AÚü•ûŒü‚ÌƒxƒNƒgƒ‹
+	Vector3 vRg = (sph->Pt - sph->Position);
+
+	//‰ñ“]‘¬“x•ª(Úü•ûŒü‘¬“x)‚ð•Ài‰^“®‚É‰Á‚¦‚é
+	Vector3 vp;
+	D3DXVec3Cross(&vp, &sph->Omega, &vRg);
+	vp += sph->Vel;
+
+	//ì—pü‚Ì’¼sƒxƒNƒgƒ‹ t = n ~ (vp ~ n)
+	Vector3 vp_n;
+	D3DXVec3Cross(&vp_n, &vp, &normal);
+	Vector3 tangent;
+	D3DXVec3Cross(&tangent, &normal, &vp_n);
+
+	//—ÍÏ -(e+1)nEvp*m
+	float J = -(sph->E + 1) * (D3DXVec3Dot(&normal, &vp)) * sph->Mass;
+
+	//•Ài‰^“®
+	sph->Force += J * normal;// / dt;
+
+	//‰ñ“]‚ðŽó‚¯‚é—ÍÏ(’n–Ê‚Æ•½s‚È•ûŒü‚Ì—ÍÏ)
+	Vector3 Rg_t;
+	D3DXVec3Cross(&Rg_t, &vRg, &tangent);
+	D3DXVec3Cross(&Rg_t, &Rg_t, &vRg);// *sph->InverseInertia;
+	float B = -D3DXVec3Dot(&tangent, &vp) / (1 / sph->Mass + D3DXVec3Dot(&tangent, &Rg_t));
+
+	//–€ŽCŒW”
+	if (sph->UK >= abs(B / J))
+	{
+		//ŠŠ‚ç‚¸“]‚ª‚éê‡‚ÉŽó‚¯‚é—Í
+		sph->Force += tangent * B;
+		Vector3 tmp;
+		D3DXVec3Cross(&tmp, &vRg, &tangent);
+		sph->Torque += tmp * B;
+	}
+	else
+	{
+		//ŠŠ‚è‚È‚ª‚ç“]‚ª‚éê‡‚ÉŽó‚¯‚é—Í
+		sph->Force += tangent * J * sph->UK;
+		Vector3 tmp;
+		D3DXVec3Cross(&tmp, &vRg, &tangent);
+		sph->Torque += tmp * J * sph->UK;
+	}
+
+	//Õ“ËŒ‹‰Ê‚ð“o˜^
+	sph->result(pln, true);
+	pln->result(sph, true);
+}
+
+void Collision::collision(PlaneCollider * pln1, PlaneCollider * pln2)
+{
+
+}
+
+/* End of File *****************************************************/
