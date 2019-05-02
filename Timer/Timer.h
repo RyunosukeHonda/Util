@@ -5,7 +5,7 @@
 */
 #pragma once
 
-#include "Base.h"
+#include <Windows.h>
 
 /**
 *	汎用タイマークラス(加算式)
@@ -91,11 +91,11 @@ public:
 	
 private:
 	//!制限時間
-	DWORD mLimit;	
+	DWORD m_Limit;	
 	//!現在時間
-	DWORD mCurrent;	
+	DWORD m_Current;	
     //!開始時の時刻を格納
-	DWORD mStart;	
+	DWORD m_Start;	
 };
 
 /****** End of File *****************************************************/

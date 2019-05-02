@@ -5,22 +5,21 @@
 */
 #include "Timer.h"
 
-#include <iostream>
 
 /*
 	コンストラクタ
 */
 Timer::Timer() :
-	mLimit(1.0f * ToDWORD),
-	mCurrent(0.0f),
-	mStart(0)
+	m_Limit(1.0f * ToDWORD),
+	m_Current(0.0f),
+	m_Start(0)
 {
 }
 
 Timer::Timer(float limit) :
-	mLimit(limit * ToDWORD),
-	mCurrent(0.0f),
-	mStart(0)
+	m_Limit(limit * ToDWORD),
+	m_Current(0.0f),
+	m_Start(0)
 {
 }
 
@@ -33,45 +32,45 @@ Timer::~Timer()
 
 void Timer::init()
 {
-	mCurrent = 0.0f;
-	mStart = 0;
+	m_Current = 0.0f;
+	m_Start = 0;
 }
 
 void Timer::init(float limit)
 {
-	mLimit = limit * ToDWORD;
-	mCurrent = 0.0f;
-	mStart = 0;
+	m_Limit = limit * ToDWORD;
+	m_Current = 0.0f;
+	m_Start = 0;
 }
 
 void Timer::update()
 {
-	if (mStart == 0)
-		mStart = timeGetTime();
-
-	time_t t = timeGetTime() - mStart;
-	mCurrent = min(t, mLimit);
+	if (m_Start == 0)
+		m_Start = timeGetTime();
+	
+	time_t t = timeGetTime() - m_Start;
+	m_Current = min(t, m_Limit);
 }
 
 bool Timer::isEnd()
 {
-	return mCurrent >= mLimit;
+	return m_Current >= m_Limit;
 }
 
 float Timer::rate()
 {
 	//0.0 -> 1.0
-	return (float)mCurrent / (float)mLimit;
+	return (float)m_Current / (float)m_Limit;
 }
 
 float Timer::getCurrent()
 {
-	return (float)mCurrent * ToSecond;
+	return (float)m_Current * ToSecond;
 }
 
 void Timer::forcedEnd()
 {
-	mLimit = mCurrent;
+	m_Limit = m_Current;
 }
 
 /****** End of File *****************************************************/
